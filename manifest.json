@@ -12,10 +12,11 @@
   "content_scripts": [
     {
       "js": [
+        "scripts/jszip.min.js",
         "scripts/content.js"
       ],
       "matches": [
-        "https://github.com/dfnsco/dfns/*"
+        "https://github.com/dfnsco/dfns/pull/*/files"
       ]
     }
   ]
