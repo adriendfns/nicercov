@@ -1,6 +1,15 @@
-let coverageString = undefined
+let coverageElement = undefined
 let coverageFileURL = undefined
 let jsonData = undefined
+
+let debounceTimer = null;
+
+var obs = new MutationObserver(function (mutations, observer) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    renderCodeCoverage();
+  }, 500); // Wait 100ms after last DOM change
+});
 
 const extractCoverageFileURL = (coverageString) => {
   const lines = coverageString.split('\n')
@@ -13,12 +22,12 @@ const extractCoverageFileURL = (coverageString) => {
   }
 }
 
-const getAnnotationCoverageString = () => {
+const getAnnotationCoverageElement = () => {
   const items = document.getElementsByClassName('js-inline-annotations')
   if (items) {
     for (var item of items) {
       if (item.children[2].children[0].children[2].textContent.includes('code-coverage')) {
-        return item.children[2].children[0].children[4].textContent
+        return item.children[2].children[0].children[4]
       }
     }
   }
@@ -53,13 +62,13 @@ const renderCodeCoverageFromData = (data) => {
 }
 
 const renderCodeCoverage = async () => {
-  if (!coverageString) {
-    coverageString = getAnnotationCoverageString();
-    if (!coverageString) return
+  if (!coverageElement) {
+    coverageElement = getAnnotationCoverageElement();
+    if (!coverageElement) return
   }
 
   if (!coverageFileURL) {
-    coverageFileURL = extractCoverageFileURL(coverageString)
+    coverageFileURL = extractCoverageFileURL(coverageElement.textContent)
     if (!coverageFileURL) return
   }
 
@@ -69,19 +78,14 @@ const renderCodeCoverage = async () => {
     const zipContent = await zip.loadAsync(response.arrayBuffer());
     const jsonContent = await zipContent.files['coverageDiffResult.json'].async('text');
     jsonData = JSON.parse(jsonContent);
-    console.log('download once')
+
+    if (jsonData) {
+      renderCodeCoverageFromData(jsonData)
+      obs.disconnect()
+
+      coverageElement.children[0].children[0].children[0].innerHTML += '\nCode coverage rendered successfully';
+    }
   }
-
-  renderCodeCoverageFromData(jsonData)
 }
-
-let debounceTimer = null;
-
-var obs = new MutationObserver(function (mutations, observer) {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    renderCodeCoverage();
-  }, 100); // Wait 100ms after last DOM change
-});
 
 obs.observe(document.body, { childList: true, subtree: true, attributes: false, characterData: false });
