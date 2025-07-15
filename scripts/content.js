@@ -43,7 +43,7 @@ const renderCodeCoverageFromData = (data) => {
         const { coveredLines, uncoveredLines } = datamap[jsFileHeader[jsFileHeader.length - 1].children[0].title]
 
         const jsFileBody = item.children[1].children[0].children
-        const lines = jsFileBody[jsFileBody.length - 1].children[jsFileBody.length - 1].children
+        const lines = jsFileBody[jsFileBody.length - 1]?.children[jsFileBody.length - 1]?.children
         if (!lines) return
         for (var line of lines) {
           if (line && line.children && line.children.length > 2) {
@@ -79,8 +79,6 @@ const renderCodeCoverage = async () => {
     const zipContent = await zip.loadAsync(response.arrayBuffer());
     const jsonContent = await zipContent.files['coverageDiffResult.json'].async('text');
     jsonData = JSON.parse(jsonContent);
-
-    console.log(jsonData)
 
     if (jsonData) {
       renderCodeCoverageFromData(jsonData)
