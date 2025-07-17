@@ -34,31 +34,37 @@ const getAnnotationCoverageElement = () => {
 }
 
 const renderCodeCoverageFromData = (data) => {
-  const datamap = Object.fromEntries(data.map(({ path, coveredLines, uncoveredLines }) => [path, { coveredLines, uncoveredLines }]))
-  const items = document.getElementsByClassName('js-file')
-  if (items) {
-    for (var item of items) {
-      const jsFileHeader = item.children[0].children[0].children
-      if (datamap[jsFileHeader[jsFileHeader.length - 1].children[0].title]) {
-        const { coveredLines, uncoveredLines } = datamap[jsFileHeader[jsFileHeader.length - 1].children[0].title]
+  const linesMap = getMapOfLines()
 
-        const jsFileBody = item.children[1].children[0].children
-        const lines = jsFileBody[jsFileBody.length - 1]?.children[jsFileBody.length - 1]?.children
-        if (!lines) return
-        for (var line of lines) {
-          if (line && line.children && line.children.length > 2) {
-            const lineNumber = parseInt(line.children[2].getAttribute('data-line-number'))
-            if (coveredLines.includes(lineNumber)) {
-              line.children[2].style.borderRight = '3px solid green';
-              line.children[2].style.paddingRight = '7px';
-            } else if (uncoveredLines.includes(lineNumber)) {
-              line.children[2].style.borderRight = '3px solid red';
-              line.children[2].style.paddingRight = '7px';
-            }
-          }
+  if (linesMap) {
+    data.map(({ path, coveredLines, uncoveredLines }) => {
+      for (const line of coveredLines) {
+        const key = `${path}:${line}`
+        if (linesMap[key]) {
+          linesMap[key].style.borderRight = '3px solid green';
+          linesMap[key].style.paddingRight = '7px';
         }
       }
-    }
+      for (const line of uncoveredLines) {
+        const key = `${path}:${line}`
+        if (linesMap[key]) {
+          linesMap[key].style.borderRight = '3px solid red';
+          linesMap[key].style.paddingRight = '7px';
+        }
+      }
+    })
+  }
+}
+
+const getMapOfLines = () => {
+  const lineNumbers = document.getElementsByClassName('js-linkable-line-number')
+  if (lineNumbers) {
+    return Object.fromEntries([...lineNumbers].filter((item) => item.classList.contains('js-blob-rnum')).map((item) => {
+      const parent = item.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement
+      const file = parent.getElementsByClassName('Link--primary')[0].title
+      const line = item.getAttribute('data-line-number')
+      return [`${file}:${line}`, item]
+    }))
   }
 }
 
